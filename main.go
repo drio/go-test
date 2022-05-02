@@ -27,20 +27,35 @@ func root(w http.ResponseWriter, r *http.Request) {
 .container {
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
 small {
   font-size: .7rem;
   color: grey;
 }
+
+.button {
+  width: fit-content;
+  border: solid 2px steelblue;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.hand {
+  font-size: 1rem;
+}
+
+
 </style>
 
 <div class="container">
 <p>
-	Welcome to this amazing app 🤘! <br/><br/>
+	Welcome to this amazing app <span class="hand">🤘</span>! <br/><br/>
 	user-agent:<br/> <small>%s</small> <br/>
 	userid: <small>%s</small> <br/>
+
+  <p class="button"><a href="/logout">Logout</a></p>
+ 
 </p>
 </div>
 `, r.Header["User-Agent"], r.Header["Sb-Uid"])

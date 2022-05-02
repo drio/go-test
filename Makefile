@@ -5,13 +5,13 @@ EC2_IP?=
 REMOTE_DIR=/home/ec2-user/services
 SERVICE_NAME=gotestapp
 REMOTE_SERVICE_DIR=$(REMOTE_DIR)/$(SERVICE_NAME)
+RGO=/usr/local/go/bin/go
 
 URL=https://$(ENV).$(DOMAIN)
 EC2_USER?=ec2-user
 EC2_CER?=~drio/.ssh/drio_aws_tufts.cer
 
 SSH=ssh -i $(EC2_CER) $(EC2_USER)@$(EC2_IP) 
-
 
 ## help: print this help message
 .PHONY: help
@@ -39,8 +39,12 @@ rsync: remote/mkdir
 
 ## deploy: deploy new code and restart server
 .PHONY: deploy
-deploy: rsync
-	$(SSH) "cd $(REMOTE_SERVICE_DIR) && make service/restart"
+deploy: rsync remote/build remote/service/restart
+
+## remote/build: rebuilds the go binary
+.PHONY: remote/build
+remote/build:
+	$(SSH) "cd $(REMOTE_SERVICE_DIR) && rm -f $(SERVICE_NAME) && $(RGO) build -o $(SERVICE_NAME) "
 
 ## remote/mkdir
 .PHONY: remote/mkdir
@@ -50,7 +54,7 @@ remote/mkdir:
 ## remote/service/status: service status
 .PHONY: remote/service/status
 remote/service/status:
-	$(SSH) "systemctl status goserver"
+	$(SSH) "systemctl status $(SERVICE_NAME)"
 
 ## remote/service/%: install service on remote machine env=(prod, staging)
 .PHONY: remote/service/install
@@ -70,8 +74,7 @@ remote/service/tail:
 ## remote/service/restart: restart service
 .PHONY: remote/service/restart
 remote/service/restart:
-	$(SSH) "cd $(REMOTE_SERVICE_DIR) && sudo make service/tail"
-
+	$(SSH) "cd $(REMOTE_SERVICE_DIR) && sudo make service/restart"
 
 ## service/install: install the systemd service on current machine
 .PHONY: service/install
@@ -85,9 +88,9 @@ service/install:
 ## service/uninstall: uninstall the systemd service on current machine
 .PHONY: service/uninstall
 service/uninstall:
-	sudo systemctl stop goserver
-	sudo systemctl disable goserver.service
-	sudo rm -rf /etc/systemd/system/goserver.service /etc/systemd/user/goserver.service
+	sudo systemctl stop $(SERVICE_NAME)
+	sudo systemctl disable $(SERVICE_NAME).service
+	sudo rm -rf /etc/systemd/system/$(SERVICE_NAME).service /etc/systemd/user/$(SERVICE_NAME).service
 
 ## service/restart: restart service
 .PHONY: service/restart
